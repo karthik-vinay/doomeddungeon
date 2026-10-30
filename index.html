@@ -8,14 +8,18 @@
 :root{--bg:#dfe5ec;--fg:#16181d;--btn:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161b;--fg:#eceff4;--btn:#232733}}
 :root[data-theme="dark"]{--bg:#14161b;--fg:#eceff4;--btn:#232733}
-html{overflow:hidden;scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:"Trebuchet MS",Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;height:100vh;height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:hidden}
-#stage{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
-canvas{border-radius:6px;touch-action:none;background:#2d2a63;display:block}
-.pad{display:none;gap:10px;padding:8px;box-sizing:border-box;width:100%;justify-content:space-between}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--fg);font-family:"Trebuchet MS",Verdana,sans-serif}
+#stage{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+canvas{border-radius:0;touch-action:none;background:#2d2a63;display:block;max-width:100%;max-height:100%}
+.pad{display:none;gap:10px;padding:8px;position:fixed;bottom:env(safe-area-inset-bottom,0px);left:0;width:100%;justify-content:space-between;z-index:10}
 .pad button{flex:1;height:64px;font-size:26px;border:0;border-radius:12px;background:var(--btn);color:var(--fg);touch-action:none;user-select:none}
 .pad button[data-k="Menu"]{flex:.6}
-@media (pointer:coarse){.pad{display:flex}}
+@media (pointer:coarse){
+ #stage{inset:0 0 82px 0;width:100vw;height:calc(100dvh - 82px)}
+ .pad{display:flex}
+}
 </style>
 </head>
 <body>
@@ -417,10 +421,15 @@ document.querySelectorAll('.pad button').forEach(b=>{
 let last=performance.now(),acc=0;
 function loop(t){acc+=Math.min(t-last,100);last=t;while(acc>=1000/60){step();acc-=1000/60}draw();requestAnimationFrame(loop)}
 function fit(){
- const sg=document.getElementById('stage'),sc=Math.min(sg.clientWidth/W,sg.clientHeight/H);
- cv.style.width=Math.floor(W*sc)+'px';cv.style.height=Math.floor(H*sc)+'px';
- const k=Math.max(1,Math.min(3,sc*(window.devicePixelRatio||1))),bw=Math.round(W*k);
- if(cv.width!==bw){cv.width=bw;cv.height=Math.round(H*k);SC=k;MAPC=null}
+ const sg=document.getElementById('stage');
+ const scale=Math.min(sg.clientWidth/W,sg.clientHeight/H);
+ cv.style.width=Math.floor(W*scale)+'px';
+ cv.style.height=Math.floor(H*scale)+'px';
+ const k=Math.max(1,Math.min(3,scale*(window.devicePixelRatio||1)));
+ const bw=Math.round(W*k),bh=Math.round(H*k);
+ if(cv.width!==bw||cv.height!==bh){
+  cv.width=bw;cv.height=bh;SC=k;MAPC=null;
+ }
 }
 addEventListener('resize',fit);
 fit();load();requestAnimationFrame(loop);
