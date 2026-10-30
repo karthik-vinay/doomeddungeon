@@ -5,25 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Doomed Dungeon</title>
 <style>
-:root{--bg:#dfe5ec;--fg:#16181d;--mut:#555d6b;--btn:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161b;--fg:#eceff4;--mut:#9aa3b2;--btn:#232733}}
-:root[data-theme="dark"]{--bg:#14161b;--fg:#eceff4;--mut:#9aa3b2;--btn:#232733}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:"Trebuchet MS",Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px;min-height:100vh}
-canvas{width:100%;max-width:800px;aspect-ratio:16/9;border-radius:10px;touch-action:none;background:#2d2a63;display:block}
-p{color:var(--mut);margin:10px 0 0;font-size:14px;text-align:center;max-width:60ch}
-.pad{display:none;gap:10px;margin-top:12px;width:100%;max-width:800px;justify-content:space-between}
+:root{--bg:#dfe5ec;--fg:#16181d;--btn:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161b;--fg:#eceff4;--btn:#232733}}
+:root[data-theme="dark"]{--bg:#14161b;--fg:#eceff4;--btn:#232733}
+html{overflow:hidden;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Trebuchet MS",Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;height:100vh;height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:hidden}
+#stage{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+canvas{border-radius:6px;touch-action:none;background:#2d2a63;display:block}
+.pad{display:none;gap:10px;padding:8px;box-sizing:border-box;width:100%;justify-content:space-between}
 .pad button{flex:1;height:64px;font-size:26px;border:0;border-radius:12px;background:var(--btn);color:var(--fg);touch-action:none;user-select:none}
 .pad button[data-k="Menu"]{flex:.6}
 @media (pointer:coarse){.pad{display:flex}}
 </style>
 </head>
 <body>
-<canvas id="c" width="800" height="450"></canvas>
-<p>Arrows or WASD to move, Space or ↑ to jump, R to retry, Esc for the level menu.</p>
+<div id="stage"><canvas id="c" width="800" height="450"></canvas></div>
 <div class="pad"><button data-k="ArrowLeft">◀</button><button data-k="ArrowRight">▶</button><button data-k="Space">⤒</button><button data-k="Menu">☰</button></div>
 <script>
 const W=800,H=450,cv=document.getElementById('c'),g=cv.getContext('2d');
+let SC=1;
 const S=(x,y,w,h,id)=>({k:'s',x,y,w,h,id,on:1});
 const HS=(x,y,w,h,id)=>({...S(x,y,w,h,id),hid:1});
 const K=(x,y,w,h,id,on=0)=>({k:'k',x,y,w,h,id,on});
@@ -190,6 +190,7 @@ function startScreen(){
  hero(300,gy-28-Math.abs(Math.sin(T*.08))*4,1,0);
  if(T%70<48)txt('Press Enter or tap to start',W/2,250,'bold 28px '+F,'#fff');
  txt('Arrows or WASD to move, Space to jump',W/2,288,'16px '+F,'#fff');
+ txt('R to retry, Esc for the map, F for fullscreen',W/2,314,'16px '+F,'#fff');
 }
 /* ---------- world map ---------- */
 const NPS=[[96,350],[206,368],[318,350],[430,370],[545,350],[652,330],[716,238],[592,246],[472,266],[352,238],[232,262],[118,196],[198,132],[342,124],[618,120]];
@@ -212,7 +213,7 @@ function tuft(c,x,y){c.strokeStyle='#7d8f4f';c.lineWidth=1.2;c.beginPath();c.mov
 function wave(c,x,y){c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+4,y-3,x+8,y);c.quadraticCurveTo(x+12,y+3,x+16,y);c.stroke()}
 let MAPC=null;
 function buildMap(){
- const m=document.createElement('canvas');m.width=W;m.height=H;const c=m.getContext('2d'),R=rng(1337);
+ const m=document.createElement('canvas');m.width=Math.round(W*SC);m.height=Math.round(H*SC);const c=m.getContext('2d'),R=rng(1337);c.scale(SC,SC);
  /* sea */
  let sg=c.createLinearGradient(0,0,0,H);sg.addColorStop(0,'#93bfbd');sg.addColorStop(1,'#6f9fa5');c.fillStyle=sg;c.fillRect(0,0,W,H);
  c.strokeStyle='rgba(255,255,255,.35)';c.lineWidth=1.5;c.lineCap='round';
@@ -341,7 +342,7 @@ function node(i){
 }
 function selectScreen(){
  if(!MAPC)MAPC=buildMap();
- g.drawImage(MAPC,0,0);
+ g.drawImage(MAPC,0,0,W,H);
  g.lineCap='round';g.lineWidth=5;g.setLineDash([1,12]);
  for(let i=0;i<14;i++){const t=trail(i);g.strokeStyle=i+1<unl?'#6b4423':'rgba(107,68,35,.35)';g.beginPath();g.moveTo(t.ax,t.ay);g.quadraticCurveTo(t.cx,t.cy,t.bx,t.by);g.stroke()}
  g.setLineDash([]);g.lineCap='butt';
@@ -349,6 +350,7 @@ function selectScreen(){
  node(sel);
 }
 function draw(){
+ g.setTransform(SC,0,0,SC,0,0);
  if(state==='start')return startScreen();
  if(state==='select')return selectScreen();
  g.fillStyle=wl===14?'#6a6384':'#f6c933';g.fillRect(0,0,W,H);
@@ -375,6 +377,7 @@ function nav(dx,dy){const a=NP(sel);let best=-1,bs=1e9;for(let j=0;j<15;j++){if(
 function hit(e){const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;let h=-1;for(let i=0;i<15;i++){const n=NP(i);if(Math.hypot(x-n.x,y-n.y)<48*n.s)h=i}return h}
 addEventListener('keydown',e=>{
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
+ if(e.code==='KeyF'){const d=document,r=d.documentElement;Promise.resolve(d.fullscreenElement?d.exitFullscreen():r.requestFullscreen&&r.requestFullscreen()).catch(()=>{});return}
  const go=e.code==='Enter'||e.code==='Space';
  if(state==='start'){if(go)state='select';return}
  if(state==='select'){
@@ -413,7 +416,14 @@ document.querySelectorAll('.pad button').forEach(b=>{
 });
 let last=performance.now(),acc=0;
 function loop(t){acc+=Math.min(t-last,100);last=t;while(acc>=1000/60){step();acc-=1000/60}draw();requestAnimationFrame(loop)}
-load();requestAnimationFrame(loop);
+function fit(){
+ const sg=document.getElementById('stage'),sc=Math.min(sg.clientWidth/W,sg.clientHeight/H);
+ cv.style.width=Math.floor(W*sc)+'px';cv.style.height=Math.floor(H*sc)+'px';
+ const k=Math.max(1,Math.min(3,sc*(window.devicePixelRatio||1))),bw=Math.round(W*k);
+ if(cv.width!==bw){cv.width=bw;cv.height=Math.round(H*k);SC=k;MAPC=null}
+}
+addEventListener('resize',fit);
+fit();load();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
